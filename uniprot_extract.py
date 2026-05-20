@@ -11,20 +11,44 @@ class Extractor:
             f"urn:miriam:uniprot:{term}",
             f"http://identifiers.org/uniprot/{term}",
             f"https://identifiers.org/uniprot/{term}",
+            f"https://www.uniprot.org/uniprotkb/{term}/entry",
         ]
 
     def execute(self, term):
-        return (
-            self.sess.post(
-                self.host,
-                data=f"""
-                    SELECT ?s ?p
-                    WHERE {{
-                        ?s ?p <{term}> .
-                    }}""",
-                )
-                .json()
+        filter_expr = " || ".join(
+            f"?term = <{uri}>" for uri in self.get_terms(term)
         )
+        query_string = f"""
+                SELECT ?s ?p ?term
+                WHERE {{
+                    ?s ?p ?term .
+                    FILTER ({filter_expr})
+                }}"""
+        # print(f"Executing sparql query: {query_string.strip()}")
+        response = self.sess.post(
+            self.host,
+            data=query_string,
+            timeout=30,
+        )
+
+        if not response.ok:
+            snippet = response.text[:200].replace("\n", " ")
+            print(
+                f"Request failed for {term}: HTTP {response.status_code}. "
+                f"Response starts with: {snippet}"
+            )
+            return {"results": {"bindings": []}}
+
+        try:
+            return response.json()
+        except ValueError:
+            content_type = response.headers.get("Content-Type", "<missing>")
+            snippet = response.text[:200].replace("\n", " ")
+            print(
+                f"Non-JSON response for {term}. Content-Type: {content_type}. "
+                f"Response starts with: {snippet}"
+            )
+            return {"results": {"bindings": []}}
 
     def extract(self, term):
         results = []
@@ -34,16 +58,12 @@ class Extractor:
             results.append((
                 bindings["s"]["value"],
                 bindings["p"]["value"],
-                term,
+                bindings["term"]["value"],
             ))
         return results
 
     def extract_all(self, term):
-        results = []
-        for term in self.get_terms(term):
-            print(f"Looking for any annotations for the uniprot ID {term}...")
-            results.extend(self.extract(term))
-        return results
+        return self.extract(term)
 
 
 if __name__ == "__main__":
@@ -57,9 +77,11 @@ if __name__ == "__main__":
         sys.stderr.write(f"usage: {sys.argv[0]} <mapping-report.csv>")
         sys.exit(1)
 
+    out_path = sys.argv[2] if len(sys.argv) > 2 else "uniprot_sparql_results.json"
+
     extractor = Extractor(
-        "https://staging.physiomeproject.org/pmr2_virtuoso_search",
-        # "https://models.physiomeproject.org/pmr2_virtuoso_search",
+        # "https://staging.physiomeproject.org/pmr2_virtuoso_search",
+        "https://models.physiomeproject.org/pmr2_virtuoso_search",
     )
 
     results = []
@@ -71,4 +93,8 @@ if __name__ == "__main__":
             print(f"Looking for any annotations for the uniprot ID {term}...")
             results.extend(extractor.extract_all(term))
 
-    print(json.dumps(results, indent=1))
+    with open(out_path, "w") as f:
+        json.dump(results, f, indent=2)
+
+    print(f"\nWrote {len(results)} UniProt IDs with SPARQL hits to {out_path}")
+    # print(json.dumps(results, indent=1))

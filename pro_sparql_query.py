@@ -11,13 +11,20 @@ Defaults:
 
 Output format:
     {
-        "Q02013": {
-            "pro_id": "PR:Q02013",
-            "pro_uri": "http://purl.obolibrary.org/obo/PR_Q02013",
-            "results": [
-                {"s": "http://...", "p": "http://..."},
-                ...
-            ]
+        "Q9JI66": {
+            "pro_id": "PR:Q9JI66",
+            "pro_uri": "http://purl.obolibrary.org/obo/PR_Q9JI66",
+            "results": {
+                "files": [
+                    "https://staging.physiomeproject.org/workspace/267/file/HEAD/Ostby_2009_NBC.cellml",
+                    ...
+                ],
+                "infiles": [
+                    {"s": "Ostby_2009_NBC.cellml#entity_7", "p": "http://..."},
+                    {"s": "Ostby_2009_NBC.cellml#Ostby_2009_NBC", "p": "https://..."},
+                    ...
+                ]
+            }
         },
         ...
     }
@@ -26,6 +33,7 @@ Output format:
 import json
 import sys
 import time
+
 from urllib.parse import urlparse
 import requests
 
@@ -40,7 +48,7 @@ def is_web_link(value):
     except Exception:
         return False
 
-def query_sparql(session: requests.Session, uri: str) -> list[dict]:
+def query_sparql(session: requests.Session, uri: str) -> tuple[set[str], list[dict[str, str]]]:
     response = session.post(
         SPARQL_ENDPOINT,
         data=f"""
@@ -89,7 +97,7 @@ def main():
                         "pro_id": pro_id,
                         "pro_uri": pro_uri,
                         "results": {
-                            "files": list(files),
+                            "files": sorted(files),
                             "infiles": infiles
                         }
                     }

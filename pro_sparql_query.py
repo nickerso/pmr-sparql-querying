@@ -26,13 +26,19 @@ Output format:
 import json
 import sys
 import time
-
+from urllib.parse import urlparse
 import requests
 
 SPARQL_ENDPOINT = "https://staging.physiomeproject.org/pmr2_virtuoso_search"
 # SPARQL_ENDPOINT = "https://models.physiomeproject.org/pmr2_virtuoso_search"
 REQUEST_DELAY = 0.25  # seconds between requests
 
+def is_web_link(value):
+    try:
+        r = urlparse(value)
+        return r.scheme in ("http", "https") and bool(r.netloc)
+    except Exception:
+        return False
 
 def query_sparql(session: requests.Session, uri: str) -> list[dict]:
     response = session.post(
@@ -45,11 +51,16 @@ def query_sparql(session: requests.Session, uri: str) -> list[dict]:
     )
     response.raise_for_status()
     bindings = response.json()["results"]["bindings"]
-    return [
-        {"s": b["s"]["value"], "p": b["p"]["value"]}
-        for b in bindings
-        if b["s"]["type"] != "bnode"
-    ]
+    file_set = set()
+    infiles = []
+    for binding in bindings:
+        for k, v in binding.items():
+            if k not in {"s", "p"} and v.get("type") == "uri" and is_web_link(v.get("value", "")):
+                file_set.add(f'{v["value"]}/file/HEAD/{binding["s"]["value"].split("#", 1)[0]}')
+        if binding["s"]["type"] != "bnode":
+            infiles.append({"s": binding["s"]["value"], "p": binding["p"]["value"]})
+    
+    return file_set, infiles
 
 
 def main():
@@ -71,13 +82,16 @@ def main():
             pro_id = pro_term["id"]
             print(f"[{i}/{len(entries)}] {uniprot_id} -> {pro_uri} ...", end=" ", flush=True)
             try:
-                results = query_sparql(session, pro_uri)
-                print(f"{len(results)} triple(s)")
-                if results:
+                files, infiles = query_sparql(session, pro_uri)
+                print(f"{len(files)} file(s), {len(infiles)} triple(s)")
+                if files or infiles:
                     output[uniprot_id] = {
                         "pro_id": pro_id,
                         "pro_uri": pro_uri,
-                        "results": results,
+                        "results": {
+                            "files": list(files),
+                            "infiles": infiles
+                        }
                     }
             except requests.HTTPError as exc:
                 print(f"HTTP {exc.response.status_code} — skipped")

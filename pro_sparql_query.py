@@ -16,7 +16,7 @@ Output format:
             "pro_uri": "http://purl.obolibrary.org/obo/PR_Q9JI66",
             "results": {
                 "files": [
-                    "https://staging.physiomeproject.org/workspace/267/file/HEAD/Ostby_2009_NBC.cellml",
+                    "https://staging.physiomeproject.org/workspace/267/rawfile/HEAD/Ostby_2009_NBC.cellml",
                     ...
                 ],
                 "infiles": [
@@ -41,30 +41,23 @@ SPARQL_ENDPOINT = "https://staging.physiomeproject.org/pmr2_virtuoso_search"
 # SPARQL_ENDPOINT = "https://models.physiomeproject.org/pmr2_virtuoso_search"
 REQUEST_DELAY = 0.25  # seconds between requests
 
-def is_web_link(value):
-    try:
-        r = urlparse(value)
-        return r.scheme in ("http", "https") and bool(r.netloc)
-    except Exception:
-        return False
-
 def query_sparql(session: requests.Session, uri: str) -> tuple[set[str], list[dict[str, str]]]:
     response = session.post(
         SPARQL_ENDPOINT,
         data=f"""
-            SELECT ?s ?p
-            WHERE {{
-                ?s ?p <{uri}> .
-            }}""",
+             SELECT ?s ?p
+             WHERE {{
+                 GRAPH ?g {{
+                     ?s ?p <{uri}> .
+                 }}
+             }}""",
     )
     response.raise_for_status()
     bindings = response.json()["results"]["bindings"]
     file_set = set()
     infiles = []
     for binding in bindings:
-        for k, v in binding.items():
-            if k not in {"s", "p"} and v.get("type") == "uri" and is_web_link(v.get("value", "")):
-                file_set.add(f'{v["value"]}/file/HEAD/{binding["s"]["value"].split("#", 1)[0]}')
+        file_set.add(f'{binding["g"]["value"]}/rawfile/HEAD/{binding["s"]["value"].split("#", 1)[0]}')
         if binding["s"]["type"] != "bnode":
             infiles.append({"s": binding["s"]["value"], "p": binding["p"]["value"]})
     

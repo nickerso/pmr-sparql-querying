@@ -45,7 +45,7 @@ def query_sparql(session: requests.Session, uri: str) -> tuple[set[str], list[di
     response = session.post(
         SPARQL_ENDPOINT,
         data=f"""
-             SELECT ?s ?p
+             SELECT ?g ?s ?p
              WHERE {{
                  GRAPH ?g {{
                      ?s ?p <{uri}> .

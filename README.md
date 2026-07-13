@@ -130,7 +130,7 @@ uv run pro_sparql_query.py
 # 3. (Optional) Query PMR for triples referencing UniProt URIs directly
 uv run uniprot_extract.py mapping-report.csv > uniprot_sparql_results.json
 
-# 4. From the `pro_sparql_results.json`, you can find relevant model files.You can also check the  details of a specific model.
+# 4. From the `pro_sparql_results.json`, you can find relevant model files. You can also check the details of a specific model.
 
 uv run pmr_ke "https://models.physiomeproject.org/workspace/267/rawfile/HEAD/Ostby_2009_NBC.cellml" `
   --ttl-output output/Ostby_2009_NBC.ttl `

@@ -10,4 +10,4 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-pmr-knowledge-exploration = { git = "https://github.com/WeiweiAi/PMR-Knowledge-Exploration.git" }
+pmr-knowledge-exploration = { git = "https://github.com/WeiweiAi/PMR-Knowledge-Exploration.git", rev = "59ab7ce8240bf494f30257e11ec2a7ef23d59fee" }

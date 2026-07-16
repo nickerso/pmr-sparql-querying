@@ -128,13 +128,33 @@ uv run uniprot_to_pro.py mapping-report.csv
 uv run pro_sparql_query.py
 
 # 3. (Optional) Query PMR for triples referencing UniProt URIs directly
-uv run uniprot_extract.py mapping-report.csv > uniprot_sparql_results.json
+uv run uniprot_extract.py mapping-report.csv 
 
-# 4. From the `pro_sparql_results.json`, you can find relevant model files. You can also check the details of a specific model.
+# 4. From the `pro_sparql_results.json`, you can find relevant model files.
+#    You can also check the details of a specific model.
 
 uv run pmr_ke "https://models.physiomeproject.org/workspace/267/rawfile/HEAD/Ostby_2009_NBC.cellml" `
   --ttl-output output/Ostby_2009_NBC.ttl `
   --json-output output/Ostby_2009_NBC_simplified.json `
   --png-output output/Ostby_2009_NBC_graph
-
 ```
+
+## Batch processing the PRO results JSON
+
+If you want to process every CellML file referenced by `pro_sparql_results.json`, use the batch helper script. It reads every `results.files` entry, keeps only `.cellml` URLs, deduplicates them, and calls the `pmr_ke` Python API directly instead of wrapping the CLI.
+
+```powershell
+uv run batch_pmr_ke.py pro_sparql_results.json output
+```
+
+After processing, it also searches PMR for each unique model filename (for example, searching `chang_fujita_2001_anion_exchanger.cellml` via `https://models.physiomeproject.org/@@search?SearchableText=chang_fujita_2001_anion_exchanger.cellml`) and records matches in `pmr_ke_batch_summary.json`.
+
+Options:
+
+- `--skip-existing`: skip sources whose output files already exist.
+- `--skip-png`: do not render Graphviz PNG output.
+- `--limit N`: process only the first `N` unique CellML files.
+- `--no-search-pmr-by-filename`: disable PMR filename search phase.
+- `--pmr-search-base-url URL`: override the PMR search endpoint (default: `https://models.physiomeproject.org/@@search`).
+
+Outputs are written under the directory you provide, grouped by workspace ID when the source is a PMR URL. A run summary is also written to `pmr_ke_batch_summary.json` inside the output directory.

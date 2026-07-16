@@ -37,8 +37,8 @@ import time
 from urllib.parse import urlparse
 import requests
 
-SPARQL_ENDPOINT = "https://staging.physiomeproject.org/pmr2_virtuoso_search"
-# SPARQL_ENDPOINT = "https://models.physiomeproject.org/pmr2_virtuoso_search"
+#SPARQL_ENDPOINT = "https://staging.physiomeproject.org/pmr2_virtuoso_search"
+SPARQL_ENDPOINT = "https://models.physiomeproject.org/pmr2_virtuoso_search"
 REQUEST_DELAY = 0.25  # seconds between requests
 
 def query_sparql(session: requests.Session, uri: str) -> tuple[set[str], list[dict[str, str]]]:

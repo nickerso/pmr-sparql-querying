@@ -632,7 +632,7 @@ wheels = [
 [[package]]
 name = "pmr-knowledge-exploration"
 version = "0.1.0"
-source = { git = "https://github.com/WeiweiAi/PMR-Knowledge-Exploration.git#59ab7ce8240bf494f30257e11ec2a7ef23d59fee" }
+source = { git = "https://github.com/WeiweiAi/PMR-Knowledge-Exploration.git?rev=59ab7ce8240bf494f30257e11ec2a7ef23d59fee#59ab7ce8240bf494f30257e11ec2a7ef23d59fee" }
 dependencies = [
     { name = "fastembed" },
     { name = "graphviz" },
@@ -921,7 +921,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "pmr-knowledge-exploration", git = "https://github.com/WeiweiAi/PMR-Knowledge-Exploration.git" },
+    { name = "pmr-knowledge-exploration", git = "https://github.com/WeiweiAi/PMR-Knowledge-Exploration.git?rev=59ab7ce8240bf494f30257e11ec2a7ef23d59fee" },
     { name = "requests", specifier = ">=2.34.2" },
 ]
 
